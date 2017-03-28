@@ -12,6 +12,9 @@ The idea behind this gem came when working with docker-compose deployments. I re
 
 This gem will automatically hook up to the capistrano after `deploy:updated` hook to perform the deployment via `capose:deploy` hook
 
+### Changelog
+  * [0.2.0] - Add `capose_env` - a key/par value of additional environment variables to be exported for compose commands
+
 ### Defaults
 
 This gem uses couple variables which can be modified inside your deploy scripts, these are:

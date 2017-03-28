@@ -53,8 +53,10 @@ namespace :capose do
 
     on roles(fetch(:capose_role)) do
       within release_path do
-        fetch(:capose_commands).each do |command|
-          execute :"docker-compose", _command(command)
+        with fetch(:capose_env) do
+          fetch(:capose_commands).each do |command|
+            execute :"docker-compose", _command(command)
+          end
         end
       end
     end
@@ -67,6 +69,7 @@ namespace :load do
     set :capose_copy,    -> { [] }
     set :capose_project, -> { fetch(:application) }
     set :capose_file,    -> { ["docker-compose-#{fetch(:stage)}.yml"] }
+    set :capose_env,     -> { {} }
 
     set :capose_commands, -> { ["build", "up -d"] }
   end
