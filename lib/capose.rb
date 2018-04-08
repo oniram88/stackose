@@ -94,7 +94,7 @@ namespace :capose do
             execute :"docker-compose", _command(command)
           end
 
-          execute :docker, :stack, :deploy, "-c #{compose_override} #{fetch(:capose_project)}"
+          execute :docker, :stack, :deploy, "-c #{fetch(:capose_file).join(' -c ')} #{fetch(:capose_project)}"
 
         end
       end
