@@ -61,14 +61,17 @@ namespace :capose do
       within release_path do
         with fetch(:capose_env) do
 
+          user_id = capture :id, '-u'
+          group_id = capture :id, '-g'
 
           execute :docker, :build, ". -t #{base_image_name}"
 
           compose_production = {
             version: '3',
             services: {
-              fetch(:capose_service_to_build,'app').to_sym=> {
-                image: base_image_name
+              fetch(:capose_service_to_build, 'app').to_sym => {
+                image: base_image_name,
+                user: "#{user_id}:#{group_id}"
               }
             }
           }
@@ -126,11 +129,11 @@ namespace :load do
     set :capose_role, -> {:web}
     set :capose_copy, -> {[]}
     set :capose_project, -> {fetch(:application)}
-    set :capose_file, -> {["docker-compose-#{fetch(:stage)}.yml"]}
+    set :capose_file, -> {["docker-compose.yml", "docker-compose-#{fetch(:stage)}.yml"]}
     set :capose_env, -> {{}}
     set :capose_image_tag, -> {fetch(:release_timestamp)}
     set :capose_service_to_build, -> {'app'}
 
-    set :capose_commands, -> {["build", "up -d"]}
+    set :capose_commands, -> {[]}
   end
 end
