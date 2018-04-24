@@ -1,8 +1,14 @@
-# Capose - A capistrano addon to use with docker-compose
+# Stackose - A capistrano addon to use with docker stack [WIP]
 
-This gem is a lighter version of docker-compose strategy found in [capistrano-docker](https://github.com/netguru/capistrano-docker) gem. The idea is to be much simplier and more custom to use.
+This gem is a refactoring to use the [capose](https://github.com/netguru/capose) gem, but with docker stack implementation.
+**The Documentation is owned from capose, and not so far complete for the docker stack, must be rewritten and cleared**
 
-The idea behind this gem came when working with docker-compose deployments. I realized that most of the time the commands I am using are "build" and "up -d". Along with giving the name of the project and the docker-compose file path, the defaults in this gem should be enough for you just to require the gem and deploy should work.
+This gem is a lighter version of docker-compose strategy found in [capistrano-docker](https://github.com/netguru/capistrano-docker) gem. 
+The idea is to be much simplier and more custom to use.
+
+The idea behind this gem came when working with docker-compose deployments. 
+I realized that most of the time the commands I am using are "build" and "up -d". 
+Along with giving the name of the project and the docker-compose file path, the defaults in this gem should be enough for you just to require the gem and deploy should work.
 
 ### Installation
 
@@ -24,7 +30,8 @@ This gem uses couple variables which can be modified inside your deploy scripts,
     set :capose_project - docker-compose project name, defaults to fetch(:application)
     set :capose_file - list of files for the docker-compose -f parameter (defauls to ["docker-compose-#{fetch(:stage)}.yml"])
     set :capose_commands - list of commands to be run with docker-compose, defaults to ['build', 'up -d']
-
+    set :capose_docker_mount_point - mount point inside the application container, defaults to "/usr/share/www/" 
+    
 With above defaults, if you have: docker-compose-STAGE.yml file and the only thing you want to do is "build" and "up" your app, then the only thing you have to do is to require the capose gem in Capfile.
 
 Capistrano will run following commands with default values:
@@ -43,6 +50,33 @@ This gem provides total three hooks, the default one, `capose:deploy` automatica
 
 `capose:command` runs the custom command in `current_path` given in `CAPOSE_COMMAND` environment variable, so the usage is: `CAPOSE_COMMAND="some command" cap [stage] capose:command` - this will run a following command: `docker-compose -p [application] -f [compose-file] some command` - you can use capose command to for example restart your containers
 
+
+### Folders to be linked
+If you need to link shared folders to the root of your application path, like capistrano standard linked_folders do,
+you can setup this like:
+
+       set :capose_linked_folders, [  'tmp/pids',
+                                     'tmp/cache',
+                                     'tmp/sockets',
+                                     'public/system',
+                                     'public/pictures',
+                                     'public/attachments',
+                                     'public/pages',
+                                     'public/assets',
+                                     'uploads']
+       
+For custom linking you can provide inside the array a hash with key->value of source->destination
+
+        set :capose_linked_folders, [
+           'tmp/pids',
+           'tmp/cache',
+            ....,
+           'uploads',
+            "/custom_path/#{fetch(:application)}/":"#{fetch(:capose_docker_mount_point)}/log",
+           ]
+           
+if you need the shared_path url in the key you can set `__shared_path__` as placeholder           
+        
 
 
 ### Additional files before first command

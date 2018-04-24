@@ -2,13 +2,13 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
-  spec.name          = 'capose'
+  spec.name          = 'stackose'
   spec.version       = '0.2.0'
-  spec.authors       = ["Jacek Jakubik"]
-  spec.email         = ["jacek.jakubik@netguru.pl"]
-  spec.description   = %q{Docker-Compose support for Capistrano 3.x}
-  spec.summary       = %q{Docker-Compose support for Capistrano 3.x}
-  spec.homepage      = 'https://github.com/netguru/capose'
+  spec.authors       = ["Marino Bonetti"]
+  spec.email         = ["marinobonetti@gmail.com"]
+  spec.description   = %q{Docker-Stack support for Capistrano 3.x}
+  spec.summary       = %q{Docker-Stack support for Capistrano 3.x}
+  spec.homepage      = 'https://github.com/oniram88/stackose'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files`.split($/)
