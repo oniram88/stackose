@@ -2,6 +2,7 @@ require 'json'
 namespace :deploy do
   after :updated, 'stackose:deploy'
   after :cleanup, 'stackose:cleanup'
+  before :check, 'stackose:create_linked_dirs'
 end
 
 namespace :stackose do
@@ -20,6 +21,20 @@ namespace :stackose do
 
   def _command(command)
     [_project, _files, command].join(" ")
+  end
+
+  def normalized_stackose_linked_folders
+    files = []
+    fetch(:stackose_linked_folders).each do |f|
+
+      if f.is_a? Hash
+        f.each {|k, v| files << ["#{k.to_s.gsub('__shared_path__', shared_path.to_s)}", v]}
+      elsif f.is_a? String
+        files << ["#{shared_path}/#{f}", "#{fetch(:stackose_docker_mount_point)}/#{f}"]
+      end
+
+    end
+    files.to_h
   end
 
   # task :command do
@@ -43,6 +58,14 @@ namespace :stackose do
   #     end
   #   end
   # end
+  #
+
+  desc "check linked dirs, and create this if there are not present"
+  task :create_linked_dirs do
+    on roles(fetch(:stackose_role)) do
+      execute :mkdir,'-p',normalized_stackose_linked_folders.keys.join(' ')
+    end
+  end
 
   task :deploy do
     on roles(fetch(:stackose_role)) do
@@ -151,15 +174,9 @@ namespace :stackose do
             }
           },
           volumes:
-            fetch(:stackose_linked_folders).collect do |f|
-
-              if f.is_a? Hash
-                f.collect{|k,v|"#{k.to_s.gsub('__shared_path__',shared_path.to_s)}:#{v}"}
-              elsif f.is_a? String
-                "#{shared_path}/#{f}:#{fetch(:stackose_docker_mount_point)}/#{f}"
-              end
-
-            end.flatten,
+            normalized_stackose_linked_folders.collect do |k|
+              k.join(':')
+            end,
           ports: ["#{fetch(:exposed_port)}:3000"]
         }
       }
