@@ -28,13 +28,34 @@ namespace :stackose do
     fetch(:stackose_linked_folders).each do |f|
 
       if f.is_a? Hash
-        f.each {|k, v| files << ["#{k.to_s.gsub('__shared_path__', shared_path.to_s)}", v]}
+        f.each {|k, v| files << [replace_strings_with_paths(k).to_sym, replace_strings_with_paths(v).to_sym]}
       elsif f.is_a? String
         files << ["#{shared_path}/#{f}", "#{fetch(:stackose_docker_mount_point)}/#{f}"]
       end
 
     end
     files.to_h
+  end
+
+  ##
+  # Replace string with composer fetch_functions
+  def replace_strings_with_paths(str)
+
+    str_to_replace = str.to_s
+
+    str.to_s.scan(/__([a-z_]*)__/).each do |k|
+      k = k.first
+      case k
+      when 'shared_path'
+        value = shared_path
+      else
+        value = fetch(k.to_sym)
+      end
+      str_to_replace = str_to_replace.gsub("__#{k}__", value.to_s)
+    end
+
+    str_to_replace
+
   end
 
   # task :command do
@@ -63,7 +84,7 @@ namespace :stackose do
   desc "check linked dirs, and create this if there are not present"
   task :create_linked_dirs do
     on roles(fetch(:stackose_role)) do
-      execute :mkdir,'-p',normalized_stackose_linked_folders.keys.join(' ')
+      execute :mkdir, '-p', normalized_stackose_linked_folders.keys.join(' ')
     end
   end
 
@@ -158,7 +179,7 @@ namespace :stackose do
     compose_production = {
       version: '3',
       services: {
-        app: {
+        fetch(:stackose_service_to_build, 'app').to_sym => {
           restart: 'unless-stopped',
           environment: {:RAILS_ENV => fetch(:rails_env).to_s,
                         :RAILS_SERVE_STATIC_FILES => 'true',
@@ -195,6 +216,8 @@ namespace :stackose do
           }
         }
       }
+
+      compose_production[:services][fetch(:stackose_service_to_build, 'app').to_sym].merge!({depends_on: ['redis']})
 
       File.open("config/redis.conf", 'w') {|file| file.write("maxmemory 50mb\nmaxmemory-policy allkeys-lfu")}
     end

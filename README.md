@@ -55,7 +55,8 @@ For custom linking you can provide inside the array a hash with key->value of so
             "/custom_path/#{fetch(:application)}/":"#{fetch(:capose_docker_mount_point)}/log",
            ]
            
-if you need the shared_path url in the key you can set `__shared_path__` as placeholder           
+if you need the shared_path url in the key you can set `__shared_path__` as placeholder     
+or all the other fetch variables can be used inside with `__variable_name__`      
         
 
 
