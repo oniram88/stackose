@@ -22,27 +22,27 @@ namespace :stackose do
     [_project, _files, command].join(" ")
   end
 
-  task :command do
-    _cmd = ENV["stackose_COMMAND"]
-    if _cmd.nil?
-      puts "Usage: stackose_COMMAND='command' bundle exec cap #{fetch(:stage)} stackose:command"
-      exit 1
-    end
-
-    on roles(fetch(:stackose_role)) do
-      within current_path do
-        execute :"docker-compose", _command(ENV["stackose_COMMAND"])
-      end
-    end
-  end
-
-  task :stop do
-    on roles(fetch(:stackose_role)) do
-      within current_path do
-        execute :"docker-compose", _command("stop")
-      end
-    end
-  end
+  # task :command do
+  #   _cmd = ENV["STACKOSE_COMMAND"]
+  #   if _cmd.nil?
+  #     puts "Usage: STACKOSE_COMMAND='command' bundle exec cap #{fetch(:stage)} stackose:command"
+  #     exit 1
+  #   end
+  #
+  #   on roles(fetch(:stackose_role)) do
+  #     within current_path do
+  #       execute :"docker-compose", _command(ENV["STACKOSE_COMMAND"])
+  #     end
+  #   end
+  # end
+  #
+  # task :stop do
+  #   on roles(fetch(:stackose_role)) do
+  #     within current_path do
+  #       execute :"docker-compose", _command("stop")
+  #     end
+  #   end
+  # end
 
   task :deploy do
     on roles(fetch(:stackose_role)) do
