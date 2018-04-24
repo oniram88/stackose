@@ -6,50 +6,30 @@ This gem is a refactoring to use the [capose](https://github.com/netguru/capose)
 This gem is a lighter version of docker-compose strategy found in [capistrano-docker](https://github.com/netguru/capistrano-docker) gem. 
 The idea is to be much simplier and more custom to use.
 
-The idea behind this gem came when working with docker-compose deployments. 
-I realized that most of the time the commands I am using are "build" and "up -d". 
-Along with giving the name of the project and the docker-compose file path, the defaults in this gem should be enough for you just to require the gem and deploy should work.
 
 ### Installation
 
   1. Ensure you already have `capistrano` gem in your project, with version at least `3.7`
-  2. Add the following line to your `Gemfile`: `gem 'capose', require: false`
-  3. Add the following file to `Capfile`: `require 'capose'`
+  2. Add the following line to your `Gemfile`: `gem 'stackose', require: false`
+  3. Add the following file to `Capfile`: `require 'stackose'`
 
-This gem will automatically hook up to the capistrano after `deploy:updated` hook to perform the deployment via `capose:deploy` hook
+This gem will automatically hook up to the capistrano after `deploy:updated` hook to perform the deployment via `stackose:deploy` hook
 
 ### Changelog
-  * [0.2.0] - Add `capose_env` - a key/par value of additional environment variables to be exported for compose commands
+
 
 ### Defaults
 
 This gem uses couple variables which can be modified inside your deploy scripts, these are:
 
-    set :capose_role - capistrano role for capose, defaults to :web
-    set :capose_copy - list of files/dirs to be copied from shared_path before first command (replaces :link_dirs/files), defaults to []
-    set :capose_project - docker-compose project name, defaults to fetch(:application)
-    set :capose_file - list of files for the docker-compose -f parameter (defauls to ["docker-compose-#{fetch(:stage)}.yml"])
-    set :capose_commands - list of commands to be run with docker-compose, defaults to ['build', 'up -d']
-    set :capose_docker_mount_point - mount point inside the application container, defaults to "/usr/share/www/" 
-    
-With above defaults, if you have: docker-compose-STAGE.yml file and the only thing you want to do is "build" and "up" your app, then the only thing you have to do is to require the capose gem in Capfile.
-
-Capistrano will run following commands with default values:
-
-    docker-compose -p [application] -f docker-compose-[stage].yml build
-    docker-compose -p [application] -f docker-compose-[stage].yml up -d
-
-
-### Additional hooks to use
-This gem provides total three hooks, the default one, `capose:deploy` automatically is executed upon deployment, the remaning two are
-
-  1. `capose:stop`
-  2. `capose:command`
-
-`capose:stop` simply runs the command `docker-compose ... stop` in the `current_path`, so you can manually stop the containers.
-
-`capose:command` runs the custom command in `current_path` given in `CAPOSE_COMMAND` environment variable, so the usage is: `CAPOSE_COMMAND="some command" cap [stage] capose:command` - this will run a following command: `docker-compose -p [application] -f [compose-file] some command` - you can use capose command to for example restart your containers
-
+    set :stackose_role - capistrano role for stackose, defaults to :web
+    set :stackose_copy - list of files/dirs to be copied from shared_path before first command (replaces :link_dirs/files), defaults to []
+    set :stackose_project - docker-compose project name, defaults to fetch(:application)
+    set :stackose_file - list of files for the docker-compose -f parameter (defauls to ["docker-compose.yml", "docker-compose-#{fetch(:stage)}.yml"]) and finaly the generated docker-compose-override
+    set :stackose_commands - list of commands to be run with docker-compose, defaults to []
+    set :stackose_docker_mount_point - mount point inside the application container, defaults to "/usr/share/www/"
+    set :stackose_linked_folders     - list of folders to link inside de image 
+    set :stackose_service_to_build   - name of the service that contains the application to run (default: app)
 
 ### Folders to be linked
 If you need to link shared folders to the root of your application path, like capistrano standard linked_folders do,
@@ -99,17 +79,23 @@ If your use-case contains more commands than `build` and `up -d`, then you can m
 
 This will tell capistrano to run following commands:
 
-    docker-compose -p [application] -f docker-compose-[stage].yml build
-    docker-compose -p [application] -f docker-compose-[stage].yml run --rm web rake db:migrate
-    docker-compose -p [application] -f docker-compose-[stage].yml run --rm web rake assets:precompile
-    docker-compose -p [application] -f docker-compose-[stage].yml up -d
+    docker-compose -p [application] -f docker-compose-[stage].yml -f docker-compose-image-override.yml build
+    docker-compose -p [application] -f docker-compose-[stage].yml -f docker-compose-image-override.yml run --rm web rake db:migrate
+    docker-compose -p [application] -f docker-compose-[stage].yml -f docker-compose-image-override.yml run --rm web rake assets:precompile
+    docker-compose -p [application] -f docker-compose-[stage].yml -f docker-compose-image-override.yml up -d
 
 ### Custom docker-compose file paths
 
 If you want to add more compose files or change the name, then modify `capose_file` variable, ex:
 
-    set :capose_file, ["docker-compose.yml", "docker-compose-override.yml"]
+    set :stackose_file, ["docker-compose.yml", "docker-compose-override.yml"]
 
 This will tell capistrano to run commands as:
 
-    docker-compose -p [application] -f docker-compose.yml -f docker-compose-override.yml [command]
+    docker-compose -p [application] -f docker-compose.yml -f docker-compose-override.yml -f docker-compose-image-override.yml [command]
+
+### Docker-compose image override
+  
+This file is generated on deploy, it will create on the "app" service configurations to make it work more correctly:
+It append the image builded for the release (docker stack don't build images) and the user configuration, so the files generated
+from inside of the container will have the user oth the host system.
