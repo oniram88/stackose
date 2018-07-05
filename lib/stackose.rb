@@ -108,16 +108,21 @@ namespace :stackose do
           user_id = capture :id, '-u'
           group_id = capture :id, '-g'
 
-          execute :docker, :build, ". -t #{base_image_name}"
+          execute :docker, :build, "-t #{base_image_name} ."
+
+          services_to_build = fetch(:stackose_service_to_build, ['app'])
+
+          services_to_build = [services_to_build].flatten
+
 
           compose_production = {
             version: '3',
-            services: {
-              fetch(:stackose_service_to_build, 'app').to_sym => {
+            services: services_to_build.collect {|s|
+              [s.to_sym, {
                 image: base_image_name,
                 user: "#{user_id}:#{group_id}"
-              }
-            }
+              }]
+            }.to_h
           }
 
           contents = StringIO.new(JSON[compose_production.to_json].to_yaml)
@@ -270,7 +275,7 @@ namespace :load do
     set :stackose_file, -> {["docker-compose.yml", "docker-compose-#{fetch(:stage)}.yml"]}
     set :stackose_env, -> {{}}
     set :stackose_image_tag, -> {fetch(:release_timestamp)}
-    set :stackose_service_to_build, -> {'app'}
+    set :stackose_service_to_build, -> {['app']}
 
     set :stackose_commands, -> {[]}
 

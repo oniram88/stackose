@@ -29,7 +29,7 @@ This gem uses couple variables which can be modified inside your deploy scripts,
     set :stackose_commands - list of commands to be run with docker-compose, defaults to []
     set :stackose_docker_mount_point - mount point inside the application container, defaults to "/usr/share/www/"
     set :stackose_linked_folders     - list of folders to link inside de image 
-    set :stackose_service_to_build   - name of the service that contains the application to run (default: app)
+    set :stackose_service_to_build   - name of the services with the application to run (default: ['app'])
 
 ### Folders to be linked
 If you need to link shared folders to the root of your application path, like capistrano standard linked_folders do,
