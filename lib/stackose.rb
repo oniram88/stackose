@@ -151,10 +151,19 @@ namespace :stackose do
   end
 
 
+  desc "Cleanup the stack from old images and stopped container"
   task :cleanup do
     on roles(fetch(:stackose_role)) do
       within release_path do
         with fetch(:stackose_env) do
+
+
+          stopped_containers = capture :docker, :ps, "--all -f 'status=exited' -f 'label=com.docker.stack.namespace=#{fetch(:stackose_project)}'", '--format "{{.ID}}"'
+
+          stopped_containers = stopped_containers.split
+
+          execute(:docker, :rm, stopped_containers) if stopped_containers.length > 0
+
           tags_list = capture :docker, :images, fetch(:stackose_project).to_sym, '--format "{{.Tag}}"'
 
           list = tags_list.split
