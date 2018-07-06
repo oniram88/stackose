@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = 'stackose'
-  spec.version       = '0.1.2'
+  spec.version       = '0.1.3'
   spec.authors       = ["Marino Bonetti"]
   spec.email         = ["marinobonetti@gmail.com"]
   spec.description   = %q{Docker-Stack support for Capistrano 3.x}
