@@ -97,34 +97,48 @@ namespace :stackose do
       end
     end
 
+
     base_image_name = "#{fetch(:stackose_project)}:#{fetch(:stackose_image_tag)}"
     compose_override = "docker-compose-image-override.yml"
 
-    ## costruiamo l'immagine
+
     on roles(fetch(:stackose_role)) do
       within release_path do
         with fetch(:stackose_env) do
 
           user_id = capture :id, '-u'
           group_id = capture :id, '-g'
-
-          execute :docker, :build, "-t #{base_image_name} ."
-
           services_to_build = fetch(:stackose_service_to_build, ['app'])
-
           services_to_build = [services_to_build].flatten
 
+          if fetch(:stackose_skip_image_build, false)
+            #skippando la costruzione dell'immagine dobbiamo però inserire nei servizi, se non già presente, il vero utente di appartenenza
+            #
 
-          compose_production = {
-            version: '3',
-            services: services_to_build.collect {|s|
-              [s.to_sym, {
-                image: base_image_name,
-                user: "#{user_id}:#{group_id}"
-              }]
-            }.to_h
-          }
+            compose_production = {
+              version: '3',
+              services: services_to_build.collect {|s|
+                [s.to_sym, {
+                  user: "#{user_id}:#{group_id}"
+                }]
+              }.to_h
+            }
+          else
+            ## costruiamo l'immagine
+            execute :docker, :build, "-t #{base_image_name} ."
 
+
+            compose_production = {
+              version: '3',
+              services: services_to_build.collect {|s|
+                [s.to_sym, {
+                  image: base_image_name,
+                  user: "#{user_id}:#{group_id}"
+                }]
+              }.to_h
+            }
+
+          end
           contents = StringIO.new(JSON[compose_production.to_json].to_yaml)
           upload! contents, "#{release_path}/#{compose_override}"
 
@@ -139,11 +153,15 @@ namespace :stackose do
     on roles(fetch(:stackose_role)) do
       within release_path do
         with fetch(:stackose_env) do
+
+          execute :"docker-compose", _command('pull')
+
+
           fetch(:stackose_commands).each do |command|
             execute :"docker-compose", _command(command)
           end
 
-          execute :docker, :stack, :deploy, "-c #{fetch(:stackose_file).join(' -c ')} #{fetch(:stackose_project)}"
+          execute :docker, :stack, :deploy, "--prune", "-c #{fetch(:stackose_file).join(' -c ')} #{fetch(:stackose_project)}"
 
         end
       end
@@ -157,12 +175,6 @@ namespace :stackose do
       within release_path do
         with fetch(:stackose_env) do
 
-
-          stopped_containers = capture :docker, :ps, "--all -f 'status=exited' -f 'label=com.docker.stack.namespace=#{fetch(:stackose_project)}'", '--format "{{.ID}}"'
-
-          stopped_containers = stopped_containers.split
-
-          execute(:docker, :rm, stopped_containers) if stopped_containers.length > 0
 
           tags_list = capture :docker, :images, fetch(:stackose_project).to_sym, '--format "{{.Tag}}"'
 
@@ -190,10 +202,14 @@ namespace :stackose do
     ask(:need_redis_service, true)
 
 
+    services_to_build = fetch(:stackose_service_to_build, ['app'])
+
+    services_to_build = [services_to_build].flatten
+
     compose_production = {
       version: '3',
-      services: {
-        fetch(:stackose_service_to_build, 'app').to_sym => {
+      services: services_to_build.collect {|s|
+        [s.to_sym, {
           restart: 'unless-stopped',
           environment: {:RAILS_ENV => fetch(:rails_env).to_s,
                         :RAILS_SERVE_STATIC_FILES => 'true',
@@ -213,8 +229,8 @@ namespace :stackose do
               k.join(':')
             end,
           ports: ["#{fetch(:exposed_port)}:3000"]
-        }
-      }
+        }]
+      }.to_h
     }
 
     if fetch(:need_redis_service)
@@ -231,7 +247,9 @@ namespace :stackose do
         }
       }
 
-      compose_production[:services][fetch(:stackose_service_to_build, 'app').to_sym].merge!({depends_on: ['redis']})
+      services_to_build.each do |srv|
+        compose_production[:services][srv.to_sym].merge!({depends_on: ['redis']})
+      end
 
       File.open("config/redis.conf", 'w') {|file| file.write("maxmemory 50mb\nmaxmemory-policy allkeys-lfu")}
     end
@@ -271,7 +289,7 @@ namespace :stackose do
       database: /usr/share/application_storage/production.sqlite3
     "
 
-    File.open("docker-compose-production.yml", 'w') {|file| file.write(JSON[compose_production.to_json].to_yaml)}
+    File.open("docker-compose-#{fetch(:stage)}.yml", 'w') {|file| file.write(JSON[compose_production.to_json].to_yaml)}
   end
 
 end
@@ -282,6 +300,7 @@ namespace :load do
     set :stackose_copy, -> {[]}
     set :stackose_project, -> {fetch(:application)}
     set :stackose_file, -> {["docker-compose.yml", "docker-compose-#{fetch(:stage)}.yml"]}
+    set :stackose_skip_image_build, -> {false} #Skip full image generation in swarm, the compose file must already include the image name
     set :stackose_env, -> {{}}
     set :stackose_image_tag, -> {fetch(:release_timestamp)}
     set :stackose_service_to_build, -> {['app']}
