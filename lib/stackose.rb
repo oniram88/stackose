@@ -161,7 +161,7 @@ namespace :stackose do
             execute :"docker-compose", _command(command)
           end
 
-          execute :docker, :stack, :deploy, "--prune", "-c #{fetch(:stackose_file).join(' -c ')} #{fetch(:stackose_project)}"
+          execute :docker, :stack, :deploy, "--with-registry-auth", "--prune", "-c #{fetch(:stackose_file).join(' -c ')} #{fetch(:stackose_project)}"
 
         end
       end
