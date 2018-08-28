@@ -214,7 +214,9 @@ namespace :stackose do
           environment: {:RAILS_ENV => fetch(:rails_env).to_s,
                         :RAILS_SERVE_STATIC_FILES => 'true',
                         :RAILS_MAX_THREADS => 5,
-                        :WEB_CONCURRENCY => 1},
+                        :WEB_CONCURRENCY => 1,
+                        :RAILS_LOG_TO_STDOUT => 'true'
+                        },
           deploy: {
             replicas: 1,
             resources: {
