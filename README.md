@@ -31,6 +31,7 @@ This gem uses couple variables which can be modified inside your deploy scripts,
     set :stackose_linked_folders     - list of folders to link inside de image 
     set :stackose_service_to_build   - name of the services with the application to run (default: ['app']) and should use the deploy user and group id
     set :stackose_skip_image_build   - true|[false] to skip the generation of the image, the compose file should have already the image defined(register) the only think is the building of compose_file with user and group id  
+    set :stackose_compose_version    - string with compose version(default: '3')
 
 ### Folders to be linked
 If you need to link shared folders to the root of your application path, like capistrano standard linked_folders do,

@@ -116,7 +116,7 @@ namespace :stackose do
             #
 
             compose_production = {
-              version: '3',
+              version: fetch(:stackose_compose_version,'3'),
               services: services_to_build.collect {|s|
                 [s.to_sym, {
                   user: "#{user_id}:#{group_id}"
@@ -129,7 +129,7 @@ namespace :stackose do
 
 
             compose_production = {
-              version: '3',
+              version: fetch(:stackose_compose_version,'3'),
               services: services_to_build.collect {|s|
                 [s.to_sym, {
                   image: base_image_name,
@@ -207,7 +207,7 @@ namespace :stackose do
     services_to_build = [services_to_build].flatten
 
     compose_production = {
-      version: '3',
+      version: fetch(:stackose_compose_version,'3'),
       services: services_to_build.collect {|s|
         [s.to_sym, {
           restart: 'unless-stopped',
@@ -306,6 +306,7 @@ namespace :load do
     set :stackose_env, -> {{}}
     set :stackose_image_tag, -> {fetch(:release_timestamp)}
     set :stackose_service_to_build, -> {['app']}
+    set :stackose_compose_version, -> {'3'}
 
     set :stackose_commands, -> {[]}
 
