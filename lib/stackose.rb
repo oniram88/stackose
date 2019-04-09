@@ -266,6 +266,8 @@ namespace :stackose do
           proxy_set_header   Host             $host;
           proxy_set_header   X-Real-IP        $remote_addr;
           proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+          proxy_http_version 1.1; #necessario per quando usiamo active_storage 
+
 
           client_max_body_size       10m;
           client_body_buffer_size    128k;
@@ -278,6 +280,15 @@ namespace :stackose do
           proxy_buffers              4 32k;
           proxy_busy_buffers_size    64k;
           proxy_temp_file_write_size 64k;
+
+          # configurazione nel casi si voglia avere il websocket, da TESTARE se dobbiamo metterlo sotto 
+          # una location di cable
+          #proxy_set_header Upgrade $http_upgrade;
+          #proxy_set_header Connection "upgrade";
+
+          # configurazione per fare forward del protocollo nel casi siamo in https, altrimenti ai login 
+          # avviene un redirect all'http interno
+          proxy_set_header X-FORWARDED-PROTO $scheme;
        }
      }"
 
